@@ -1,16 +1,25 @@
 import { Router } from 'express';
-import { body } from 'express-validator';
+import { body, oneOf } from 'express-validator';
 import { validateRequest } from '../middleware/validate.middleware';
 import { UserRole } from '../types';
 import * as authController from '../controllers/auth.controller';
+import rateLimit from 'express-rate-limit';
+import { verifyRecaptcha } from '../middleware/recaptcha.middleware';
 
 const router = Router();
 
-// User registration
+// Rate limit: 5 attempts/hour/IP for registration
+const registerLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, standardHeaders: true, legacyHeaders: false });
+
+// User registration (email or phone)
 router.post(
   '/register',
+  registerLimiter,
   [
-    body('email').isEmail().withMessage('Valid email is required'),
+    oneOf([
+      body('email').isEmail().withMessage('Valid email is required'),
+      body('phoneNumber').matches(/^[0-9+\-\s()]+$/).withMessage('Valid phone number is required'),
+    ], { message: 'Either a valid email or phone number is required' }),
     body('password')
       .isLength({ min: 8 })
       .withMessage('Password must be at least 8 characters long')
@@ -19,18 +28,21 @@ router.post(
       .matches(/[a-z]/)
       .withMessage('Password must contain at least one lowercase letter')
       .matches(/[0-9]/)
-      .withMessage('Password must contain at least one number'),
+      .withMessage('Password must contain at least one number')
+      .matches(/[^A-Za-z0-9]/)
+      .withMessage('Password must contain at least one special character'),
     body('firstName').notEmpty().withMessage('First name is required'),
     body('lastName').notEmpty().withMessage('Last name is required'),
+    body('dateOfBirth').isISO8601().toDate().withMessage('Valid date of birth is required'),
+    body('country').optional().isString().withMessage('Country must be a string'),
+    body('acceptTerms').equals('true').withMessage('You must accept the Terms of Service and Privacy Policy'),
     body('role')
       .optional()
       .isIn([UserRole.USER, UserRole.THERAPIST])
       .withMessage('Invalid user role'),
-    body('phoneNumber')
-      .optional()
-      .matches(/^[0-9+\-\s()]+$/)
-      .withMessage('Invalid phone number format'),
+    body('recaptchaToken').optional().isString(),
   ],
+  verifyRecaptcha,
   validateRequest,
   authController.register
 );

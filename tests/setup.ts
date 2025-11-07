@@ -18,16 +18,20 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  if (mongoose.connection.readyState !== 0) {
-    await mongoose.connection.dropDatabase();
-    await mongoose.connection.close();
+  try {
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.connection.dropDatabase();
+      await mongoose.connection.close();
+    }
+  } finally {
+    if (mongo) await mongo.stop();
   }
-  if (mongo) await mongo.stop();
 });
 
 afterEach(async () => {
-  const collections = await mongoose.connection.db.collections();
-  for (const collection of collections) {
-    await collection.deleteMany({});
-  }
+  if (mongoose.connection.readyState !== 1) return; // not connected
+  const db = mongoose.connection.db;
+  if (!db) return;
+  const collections = await db.collections();
+  await Promise.all(collections.map((c) => c.deleteMany({})));
 });

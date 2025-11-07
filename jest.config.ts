@@ -12,6 +12,7 @@ const config: Config = {
     '!src/**/index.ts',
     '!src/**/types.ts',
   ],
+  setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
 };
 
 export default config;

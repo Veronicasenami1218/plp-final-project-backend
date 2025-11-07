@@ -6,6 +6,7 @@ import morgan from 'morgan';
 import { StatusCodes } from 'http-status-codes';
 import { errorHandler } from './middleware/error.middleware';
 import { stream } from './utils/logger';
+import authRouter from './routes/auth.routes';
 
 const expressApp = express();
 
@@ -20,6 +21,9 @@ expressApp.use(morgan('dev', { stream }));
 expressApp.get('/health', (_req, res) => {
   res.status(StatusCodes.OK).json({ status: 'ok' });
 });
+
+// Mount auth routes for integration tests
+expressApp.use('/api/v1/auth', authRouter);
 
 // Attach error handler last
 expressApp.use(errorHandler);

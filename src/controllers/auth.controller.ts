@@ -16,26 +16,81 @@ import { UserRole } from '../types';
  */
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password, firstName, lastName, role = UserRole.USER, phoneNumber } = req.body;
+    const {
+      email,
+      phoneNumber,
+      password,
+      firstName,
+      lastName,
+      dateOfBirth,
+      country = 'Nigeria',
+      acceptTerms,
+      role = UserRole.USER,
+    } = req.body as {
+      email?: string;
+      phoneNumber?: string;
+      password: string;
+      firstName: string;
+      lastName: string;
+      dateOfBirth: string | Date;
+      country?: string;
+      acceptTerms?: string | boolean;
+      role?: UserRole;
+    };
+
+    // Log attempt without PII
+    logger.info('Registration attempt', { byEmail: Boolean(email), byPhone: Boolean(phoneNumber) });
+
+    // Require either email or phone
+    if (!email && !phoneNumber) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Either email or phone number is required');
+    }
+
+    // Enforce age >= 18
+    const dob = new Date(dateOfBirth as any);
+    if (Number.isNaN(dob.getTime())) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid date of birth is required');
+    }
+    const now = new Date();
+    const age = now.getFullYear() - dob.getFullYear() - (now < new Date(dob.getFullYear() + (now.getFullYear() - dob.getFullYear()), dob.getMonth(), dob.getDate()) ? 1 : 0);
+    if (age < 18) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'You must be at least 18 years old');
+    }
+
+    // Enforce acceptance of terms
+    const accepted = acceptTerms === true || acceptTerms === 'true';
+    if (!accepted) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'You must accept the Terms of Service and Privacy Policy');
+    }
 
     // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({
+      $or: [
+        ...(email ? [{ email }] : []),
+        ...(phoneNumber ? [{ phoneNumber }] : []),
+      ],
+    });
     if (existingUser) {
-      throw new ApiError(StatusCodes.CONFLICT, 'Email already in use');
+      throw new ApiError(StatusCodes.CONFLICT, 'Account with provided email or phone already exists');
     }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
     // Create user
+    const phoneCode = phoneNumber ? String(Math.floor(100000 + Math.random() * 900000)) : undefined;
     const user = await User.create({
       email,
+      phoneNumber,
       password: hashedPassword,
       firstName,
       lastName,
       role,
-      phoneNumber,
-      verificationToken: uuidv4(),
+      verificationToken: email ? uuidv4() : undefined,
+      phoneVerificationCode: phoneCode,
+      dateOfBirth: dob,
+      country,
+      acceptedTermsAt: new Date(),
     });
 
     // Generate tokens
@@ -48,17 +103,23 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
     });
 
-    // Send verification email
-    const verificationUrl = `${process.env.CLIENT_URL}/verify-email/${user.verificationToken}`;
-    await sendEmail({
-      to: user.email,
-      subject: 'Verify your email',
-      html: `Please click <a href="${verificationUrl}">here</a> to verify your email.`,
-    });
+    // Send verification message (email or SMS stub)
+    if (email && user.verificationToken) {
+      const verificationUrl = `${process.env.CLIENT_URL}/verify-email/${user.verificationToken}`;
+      await sendEmail({
+        to: email,
+        subject: 'Verify your email',
+        html: `Please click <a href="${verificationUrl}">here</a> to verify your email.`,
+      });
+    } else if (phoneNumber && phoneCode) {
+      // SMS provider integration would go here; for now, log masked
+      logger.info('SMS verification code sent', { phone: '***redacted***' });
+    }
 
     // Remove sensitive data before sending response
     user.password = undefined as any;
     user.verificationToken = undefined as any;
+    user.phoneVerificationCode = undefined as any;
 
     res.status(StatusCodes.CREATED).json({
       success: true,

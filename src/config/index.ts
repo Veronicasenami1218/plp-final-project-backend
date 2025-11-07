@@ -18,6 +18,7 @@ export const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
 export const SERVER_URL = process.env.SERVER_URL || `http://localhost:${PORT}`;
 
 export const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
+export const RECAPTCHA_SECRET = process.env.RECAPTCHA_SECRET || '';
 
 export const ORIGIN = NODE_ENV === 'production' 
   ? [CLIENT_URL, SERVER_URL] 
@@ -51,6 +52,9 @@ export const config = {
   serverUrl: SERVER_URL,
   redis: {
     url: REDIS_URL,
+  },
+  recaptcha: {
+    secret: RECAPTCHA_SECRET,
   },
   cors: {
     origin: ORIGIN,

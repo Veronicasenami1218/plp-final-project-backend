@@ -1,0 +1,61 @@
+# Dependencies
+node_modules/
+
+# TypeScript artifacts
+*.tsbuildinfo
+
+# Build output
+dist/
+build/
+
+# Tests & coverage
+coverage/
+.nyc_output/
+junit.xml
+
+# Logs
+logs/
+*.log
+*.log.*
+
+# Environment & secrets (CRITICAL)
+.env
+.env.*
+!.env.example
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Temp & caches
+tmp/
+temp/
+.tmp/
+.temp/
+.cache/
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Uploads & generated assets (if used)
+uploads/
+public/uploads/
+
+# Docker & Compose
+Dockerfile*
+.dockerignore
+docker/
+docker-compose*.yml
+
+# Misc
+*.tgz
+*.orig
+
+#package-lock.json
+*package-lock.json

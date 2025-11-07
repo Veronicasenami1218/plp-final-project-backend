@@ -1,0 +1,172 @@
+import 'dotenv/config';
+import express, { Request, Response, NextFunction } from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import compression from 'compression';
+import morgan from 'morgan';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+import { StatusCodes } from 'http-status-codes';
+import rateLimit from 'express-rate-limit';
+import RedisStore from 'rate-limit-redis';
+import { createClient } from 'redis';
+import { initializeDatabase } from './config/database';
+import { errorHandler } from './middleware/error.middleware';
+import { logger, stream } from './utils/logger';
+import { ApiError } from './utils/ApiError';
+import { initializeSocket } from './socket';
+import { registerRoutes } from './routes';
+import { NODE_ENV, PORT, LOG_FORMAT, ORIGIN, CREDENTIALS } from './config';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './config/swagger';
+
+class App {
+  public app: express.Application;
+  public env: string;
+  public port: string | number;
+  public httpServer: ReturnType<typeof createServer>;
+  public io: Server;
+
+  constructor() {
+    this.app = express();
+    this.env = NODE_ENV || 'development';
+    this.port = PORT || 5000;
+    this.httpServer = createServer(this.app);
+    this.io = new Server(this.httpServer, {
+      cors: {
+        origin: ORIGIN,
+        credentials: CREDENTIALS,
+      },
+    });
+
+    this.initializeMiddlewares();
+    this.initializeRoutes();
+    this.initializeErrorHandling();
+    initializeSocket(this.io);
+  }
+
+  public async initialize() {
+    try {
+      await initializeDatabase();
+      await this.initializeRateLimiting();
+      logger.info('Server initialization complete');
+    } catch (error) {
+      logger.error('Failed to initialize server:', error);
+      process.exit(1);
+    }
+  }
+
+  private initializeMiddlewares() {
+    // Security middleware
+    this.app.use(helmet());
+    this.app.use(cors({ origin: ORIGIN, credentials: CREDENTIALS }));
+    this.app.use(express.json());
+    this.app.use(express.urlencoded({ extended: true }));
+    this.app.use(compression());
+    
+    // Request logging
+    this.app.use(morgan(LOG_FORMAT, { stream }));
+
+    // Health check endpoint
+    this.app.get('/health', (_req, res) => {
+      res.status(StatusCodes.OK).json({ status: 'ok', timestamp: new Date().toISOString() });
+    });
+  }
+
+  private async initializeRateLimiting() {
+    const defaultLimiter = rateLimit({
+      windowMs: 15 * 60 * 1000, // 15 minutes
+      max: 100,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: 'Too many requests from this IP, please try again after 15 minutes',
+    });
+
+    if (process.env.REDIS_URL) {
+      try {
+        const redisClient = createClient({ url: process.env.REDIS_URL });
+        await redisClient.connect();
+
+        const limiter = rateLimit({
+          windowMs: 15 * 60 * 1000,
+          max: 100,
+          standardHeaders: true,
+          legacyHeaders: false,
+          store: new RedisStore({
+            sendCommand: (...args: string[]) => redisClient.sendCommand(args),
+          }),
+          message: 'Too many requests from this IP, please try again after 15 minutes',
+        });
+
+        this.app.use(limiter);
+        return;
+      } catch (err) {
+        logger.warn('Redis rate limiting unavailable, falling back to in-memory limiter', {
+          error: (err as Error).message,
+        });
+      }
+    }
+
+    // Fallback to in-memory limiter
+    this.app.use(defaultLimiter);
+  }
+
+  private initializeRoutes() {
+    // Register API routes
+    registerRoutes(this.app);
+
+    // Swagger docs (OpenAPI) - enable only in non-production
+    if (this.env !== 'production') {
+      this.app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { explorer: true }));
+      this.app.get('/api-docs.json', (_req: Request, res: Response) => {
+        res.json(swaggerSpec);
+      });
+    }
+
+    // 404 handler for non-existent routes (must be after routes)
+    this.app.use((_req: Request, _res: Response, next: NextFunction) => {
+      next(new ApiError(StatusCodes.NOT_FOUND, 'Not Found'));
+    });
+  }
+
+  private initializeErrorHandling() {
+    this.app.use(errorHandler);
+  }
+
+  public listen() {
+    this.httpServer.listen(this.port, () => {
+      logger.info(`=================================`);
+      logger.info(`======= ENV: ${this.env} =======`);
+      logger.info(`🚀 App listening on port ${this.port}`);
+      logger.info(`=================================`);
+    });
+  }
+}
+
+// Create and start the server
+const app = new App();
+app.initialize().then(() => {
+  app.listen();
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason: Error) => {
+  logger.error(`Unhandled Rejection: ${reason.message}`);
+  logger.error(reason.stack);
+  process.exit(1);
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error: Error) => {
+  logger.error(`Uncaught Exception: ${error.message}`);
+  logger.error(error.stack);
+  process.exit(1);
+});
+
+// Handle SIGTERM
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received. Shutting down gracefully');
+  process.exit(0);
+});
+
+export { app };

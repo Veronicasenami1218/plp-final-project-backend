@@ -1,4 +1,4 @@
-import swaggerJSDoc, { type Options } from 'swagger-jsdoc';
+import swaggerJSDoc from 'swagger-jsdoc';
 import { NODE_ENV, SERVER_URL } from './index';
 
 const swaggerDefinition = {
@@ -248,9 +248,9 @@ const swaggerDefinition = {
   },
 };
 
-const options: Options = {
+const options = {
   definition: swaggerDefinition as any,
   apis: ['src/routes/**/*.ts', 'src/controllers/**/*.ts'],
-};
+} as any;
 
 export const swaggerSpec = swaggerJSDoc(options);

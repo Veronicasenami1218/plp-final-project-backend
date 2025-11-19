@@ -18,7 +18,9 @@ router.post(
   [
     oneOf([
       body('email').isEmail().withMessage('Valid email is required'),
-      body('phoneNumber').matches(/^[0-9+\-\s()]+$/).withMessage('Valid phone number is required'),
+      body('phoneNumber')
+        .isMobilePhone('any', { strictMode: false })
+        .withMessage('Valid phone number is required (e.g., +2348012345678)'),
     ], { message: 'Either a valid email or phone number is required' }),
     body('password')
       .isLength({ min: 8 })

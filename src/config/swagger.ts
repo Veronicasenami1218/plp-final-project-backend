@@ -54,7 +54,13 @@ const swaggerDefinition = {
         required: ['password', 'firstName', 'lastName', 'dateOfBirth', 'acceptTerms'],
         properties: {
           email: { type: 'string', format: 'email', description: 'Either email or phoneNumber is required' },
-          phoneNumber: { type: 'string', description: 'Either email or phoneNumber is required' },
+          phoneNumber: { 
+            type: 'string', 
+            format: 'phone',
+            pattern: '^\\+?[1-9]\\d{1,14}$',
+            example: '+2348012345678',
+            description: 'Valid international phone number (E.164 format recommended). Either email or phoneNumber is required' 
+          },
           password: {
             type: 'string',
             minLength: 8,

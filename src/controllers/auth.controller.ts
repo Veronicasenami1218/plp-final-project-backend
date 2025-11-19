@@ -439,3 +439,5 @@ const generateAccessToken = (userId: string, role: UserRole, sessionId: string):
     { expiresIn: JWT_ACCESS_EXPIRATION as SignOptions['expiresIn'] }
   );
 };
+
+

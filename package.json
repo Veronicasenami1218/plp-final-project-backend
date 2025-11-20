@@ -9,13 +9,14 @@
   "scripts": {
     "start": "node dist/server.js",
     "dev": "ts-node-dev --respawn --transpile-only --no-notify --exit-child src/server.ts",
-    "build": "tsc",
+    "build": "tsc --skipLibCheck",
+    "build:prod": "tsc --skipLibCheck --sourceMap false",
     "test": "jest --coverage --passWithNoTests",
     "test:watch": "jest --watch",
     "lint": "eslint . --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",
     "prepare": "husky install || exit 0",
-    "postinstall": "npm run build"
+    "postinstall": "npm run build:prod"
   },
   "keywords": [
     "mental-health",

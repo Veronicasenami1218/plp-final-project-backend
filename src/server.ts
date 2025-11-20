@@ -30,7 +30,7 @@ class App {
   constructor() {
     this.app = express();
     this.env = NODE_ENV || 'development';
-    this.port = PORT || 5000;
+    this.port = PORT;
     this.httpServer = createServer(this.app);
     this.io = new Server(this.httpServer, {
       cors: {
@@ -141,7 +141,7 @@ class App {
   }
 
   public listen() {
-    this.httpServer.listen(this.port, () => {
+    this.httpServer.listen(this.port, '0.0.0.0', () => {
       logger.info(`=================================`);
       logger.info(`======= ENV: ${this.env} =======`);
       logger.info(`🚀 App listening on port ${this.port}`);

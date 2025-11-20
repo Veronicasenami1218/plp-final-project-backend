@@ -22,7 +22,7 @@ export const RECAPTCHA_SECRET = process.env.RECAPTCHA_SECRET || '';
 
 export const ORIGIN = NODE_ENV === 'production' 
   ? [CLIENT_URL, SERVER_URL] 
-  : ['http://localhost:3000', 'http://localhost:5000'];
+  : ['http://localhost:3000', `http://localhost:${PORT}`];
 
 export const CREDENTIALS = process.env.CREDENTIALS === 'true';
 

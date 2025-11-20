@@ -2,12 +2,24 @@
 
 Secure, versioned REST API for the MentWel Digital Mental Health Platform with a strict Anonymity Layer, and real-time capabilities.
 
+## 🚀 Live Deployment
+
+**Production API:** https://plp-final-project-backend.onrender.com
+
+- **Health Check:** https://plp-final-project-backend.onrender.com/health
+- **API Base URL:** https://plp-final-project-backend.onrender.com/api/v1
+- **API Documentation:** Available in development mode only
+
 ## Features
 - **REST API** with `/api/v1` versioning
 - **Security**: JWT auth, RBAC, CORS, Helmet, rate limiting (Redis or in-memory fallback)
+- **User Registration**: Email/phone registration with gender and country selection
+- **Email Verification**: Optional email verification with fallback support
 - **Anonymity Layer**: PII separation and masking for therapist-facing contexts
-- **MongoDB** (Mongoose), **Redis** (optional), **Socket.io** for real-time
-- **Swagger/OpenAPI** docs
+- **MongoDB Atlas**: Cloud database with proper connection handling
+- **Redis** (optional), **Socket.io** for real-time capabilities
+- **Swagger/OpenAPI** docs (development only)
+- **Production Deployment**: Live on Render with environment-based configuration
 - **Testing** with Jest + Supertest
 
 ## Getting Started
@@ -41,11 +53,25 @@ See `.env.example`. Important keys:
 - `REDIS_URL` (optional)
 - `JWT_SECRET`, `JWT_ACCESS_EXPIRATION`, `JWT_REFRESH_EXPIRATION`
 
-## API & Docs
-- Health check: `GET /health`
-- API base: `/api/v1`
-- Swagger UI (non-production): `GET /api-docs`
-- Swagger JSON: `GET /api-docs.json`
+## API Endpoints
+
+### Production URLs
+- **Health check:** `GET https://plp-final-project-backend.onrender.com/health`
+- **API base:** `https://plp-final-project-backend.onrender.com/api/v1`
+
+### Authentication Endpoints
+- **Register:** `POST /api/v1/auth/register`
+- **Login:** `POST /api/v1/auth/login`
+- **Refresh Token:** `POST /api/v1/auth/refresh-token`
+- **Logout:** `POST /api/v1/auth/logout`
+- **Forgot Password:** `POST /api/v1/auth/forgot-password`
+- **Reset Password:** `POST /api/v1/auth/reset-password`
+- **Verify Email:** `GET /api/v1/auth/verify-email/:token`
+- **Resend Verification:** `POST /api/v1/auth/resend-verification`
+
+### Development Only
+- **Swagger UI:** `GET /api-docs` (localhost only)
+- **Swagger JSON:** `GET /api-docs.json` (localhost only)
 
 ## Project Structure
 ```
@@ -85,10 +111,31 @@ backend/
 - Follow the code organization (Controller → Service → Repository).
 - Keep controllers thin; put business logic in services.
 
+## Deployment
+
+### Production Environment (Render)
+- **URL:** https://plp-final-project-backend.onrender.com
+- **Database:** MongoDB Atlas
+- **Environment:** Production mode with optimized settings
+- **Email Verification:** Configurable via `REQUIRE_EMAIL_VERIFICATION` environment variable
+
+### Environment Variables for Production
+Required environment variables for Render deployment:
+```bash
+NODE_ENV=production
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database
+JWT_SECRET=your-secure-jwt-secret
+CLIENT_URL=https://your-frontend-domain.com
+SERVER_URL=https://plp-final-project-backend.onrender.com
+REQUIRE_EMAIL_VERIFICATION=false
+```
+
 ## Troubleshooting
-- Redis not available: app falls back to in-memory rate limiter.
-- MongoDB TTL index: token expiry is enforced via TTL on `expiresAt`.
-- Swagger not loading in production: Docs are disabled when `NODE_ENV=production`.
+- **Redis not available:** App falls back to in-memory rate limiter
+- **MongoDB connection:** Ensure Atlas connection string is properly formatted
+- **Email verification:** Set `REQUIRE_EMAIL_VERIFICATION=false` to allow login without verification
+- **Swagger docs:** Disabled in production for security (`NODE_ENV=production`)
+- **Deployment issues:** Check Render logs for specific error messages
 
 ---
 MentWel © 2025 – All rights reserved.

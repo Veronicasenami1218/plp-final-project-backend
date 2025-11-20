@@ -141,10 +141,14 @@ class App {
   }
 
   public listen() {
-    this.httpServer.listen(this.port, '0.0.0.0', () => {
+    const host = process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost';
+    this.httpServer.listen({
+      port: this.port,
+      host: host
+    }, () => {
       logger.info(`=================================`);
       logger.info(`======= ENV: ${this.env} =======`);
-      logger.info(`🚀 App listening on port ${this.port}`);
+      logger.info(`🚀 App listening on ${host}:${this.port}`);
       logger.info(`=================================`);
     });
   }

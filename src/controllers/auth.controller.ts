@@ -111,12 +111,20 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     if (email && user.verificationToken) {
       const verificationUrl = `${process.env.CLIENT_URL}/verify-email/${user.verificationToken}`;
       const emailContent = emailTemplates.verifyEmail(verificationUrl, firstName);
-      await sendEmail({
-        to: email,
-        subject: emailContent.subject,
-        html: emailContent.html,
-        text: emailContent.text,
-      });
+      try {
+        await sendEmail({
+          to: email,
+          subject: emailContent.subject,
+          html: emailContent.html,
+          text: emailContent.text,
+        });
+        logger.info('Verification email sent successfully');
+      } catch (emailError) {
+        // Don't fail registration if email fails - just log the error
+        logger.warn('Failed to send verification email, but registration completed', { 
+          error: (emailError as Error).message 
+        });
+      }
     } else if (phoneNumber && phoneCode) {
       // SMS provider integration would go here; for now, log masked
       logger.info('SMS verification code sent', { phone: '***redacted***' });

@@ -5,22 +5,65 @@ const swaggerDefinition = {
   openapi: '3.0.3',
   info: {
     title: 'MentWel API',
-    description: 'Secure, anonymous, versioned API for the MentWel Digital Mental Health Platform',
+    description: `
+# MentWel Digital Mental Health Platform API
+
+A secure, production-ready REST API for mental health services with comprehensive authentication and user management.
+
+## 🚀 Current Status
+- **Live Production URL:** https://plp-final-project-backend.onrender.com
+- **Authentication System:** ✅ Fully Implemented
+- **User Registration:** ✅ With Nigerian phone validation, gender/country selection
+- **Email Verification:** ✅ With graceful fallback support
+- **Security Features:** ✅ JWT auth, rate limiting, CORS, helmet protection
+
+## 📋 Available Endpoints
+- **Authentication:** Complete user registration, login, password reset, email verification
+- **Health Check:** System monitoring and status
+- **Future Modules:** User profiles, therapist management, sessions, messaging, appointments
+
+## 🔐 Security Features
+- Rate limiting (5 registration attempts/hour)
+- JWT token authentication with refresh tokens
+- Nigerian phone number validation (+234XXXXXXXXX)
+- Password complexity requirements
+- Age verification (18+ only)
+- Email verification with fallback support
+- CORS and security headers enabled
+
+## 🌍 Supported Regions
+- Primary: Nigeria (with local phone validation)
+- Additional: Ghana, Kenya, South Africa
+    `,
     version: '1.0.0',
+    contact: {
+      name: 'MentWel Team',
+      url: 'https://plp-final-project-backend.onrender.com',
+    },
+    license: {
+      name: 'ISC',
+    },
   },
   servers: [
     {
-      url: SERVER_URL,
-      description: NODE_ENV === 'production' ? 'Production server' : 'Development server',
+      url: 'https://plp-final-project-backend.onrender.com',
+      description: 'Production server (Live)',
+    },
+    {
+      url: 'http://localhost:5000',
+      description: 'Development server (Local)',
     },
   ],
   tags: [
-    { name: 'Health', description: 'Health check and diagnostics' },
-    { name: 'Auth', description: 'Authentication and token management' },
-    { name: 'Users', description: 'User operations' },
-    { name: 'Therapists', description: 'Therapist operations' },
-    { name: 'Sessions', description: 'Therapy sessions management' },
-    { name: 'Messages', description: 'Real-time messaging and history (pagination required)' },
+    { name: 'Health', description: 'Health check and system diagnostics' },
+    { name: 'Auth', description: 'User authentication, registration, and token management with email verification fallback' },
+    { name: 'Users', description: 'User profile operations (Coming Soon)' },
+    { name: 'Therapists', description: 'Therapist management operations (Coming Soon)' },
+    { name: 'Sessions', description: 'Therapy sessions management (Coming Soon)' },
+    { name: 'Messages', description: 'Real-time messaging and history (Coming Soon)' },
+    { name: 'Appointments', description: 'Appointment scheduling and management (Coming Soon)' },
+    { name: 'Notifications', description: 'User notifications system (Coming Soon)' },
+    { name: 'Admin', description: 'Administrative operations (Coming Soon)' },
   ],
   components: {
     securitySchemes: {
@@ -53,49 +96,73 @@ const swaggerDefinition = {
         type: 'object',
         required: ['password', 'firstName', 'lastName', 'dateOfBirth', 'gender', 'acceptTerms'],
         properties: {
-          email: { type: 'string', format: 'email', description: 'Either email or phoneNumber is required' },
+          email: { 
+            type: 'string', 
+            format: 'email', 
+            example: 'user@example.com',
+            description: 'Valid email address. Provide either email OR phoneNumber (not both).' 
+          },
           phoneNumber: { 
             type: 'string', 
             format: 'phone',
-            pattern: '^\\+?[1-9]\\d{1,14}$',
+            pattern: '^\\+234[789][01]\\d{8}$',
             example: '+2348012345678',
-            description: 'Valid international phone number (E.164 format recommended). Either email or phoneNumber is required' 
+            description: 'Valid Nigerian phone number with country code +234 (11 digits total). Format: +234XXXXXXXXX. Provide either email OR phoneNumber (not both).' 
           },
           password: {
             type: 'string',
             minLength: 8,
             pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,}$',
-            description: 'Min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special character',
+            example: 'SecurePass123!',
+            description: 'Password must be at least 8 characters with: 1 uppercase, 1 lowercase, 1 number, 1 special character',
           },
-          firstName: { type: 'string', example: 'John' },
-          lastName: { type: 'string', example: 'Doe' },
-          dateOfBirth: { type: 'string', format: 'date', example: '1990-01-01' },
+          firstName: { 
+            type: 'string', 
+            example: 'John',
+            description: 'User first name'
+          },
+          lastName: { 
+            type: 'string', 
+            example: 'Doe',
+            description: 'User last name'
+          },
+          dateOfBirth: { 
+            type: 'string', 
+            format: 'date', 
+            example: '1990-01-01',
+            description: 'Date of birth in YYYY-MM-DD format. User must be 18 or older.'
+          },
           gender: {
             type: 'string',
             enum: ['male', 'female', 'other', 'prefer_not_to_say'],
-            description: 'User gender selection',
+            description: 'User gender selection (required)',
             example: 'male'
           },
           country: {
             type: 'string',
             enum: ['Nigeria', 'Ghana', 'Kenya', 'South Africa', 'Other'],
             default: 'Nigeria',
-            description: 'Country of residence',
+            description: 'Country of residence (defaults to Nigeria)',
             example: 'Nigeria'
           },
           role: {
             type: 'string',
             enum: ['user', 'therapist'],
             default: 'user',
-            description: 'User role - defaults to user'
+            description: 'User role - defaults to user for regular users, set to therapist for mental health professionals'
           },
-          acceptTerms: { type: 'boolean', example: true, description: 'Must be true to accept Terms of Service and Privacy Policy' },
-          recaptchaToken: { type: 'string', description: 'reCAPTCHA v3 token (optional)' },
+          acceptTerms: { 
+            type: 'boolean', 
+            example: true, 
+            description: 'Must be true to accept Terms of Service and Privacy Policy (required)' 
+          },
+          recaptchaToken: { 
+            type: 'string', 
+            description: 'reCAPTCHA v3 token for bot protection (optional in development)' 
+          },
         },
-        oneOf: [
-          { required: ['email'] },
-          { required: ['phoneNumber'] },
-        ],
+        description: 'User registration requires either email OR phoneNumber (not both), along with all other required fields.',
+        additionalProperties: false
       },
       RefreshRequest: {
         type: 'object',
@@ -183,21 +250,34 @@ const swaggerDefinition = {
     '/health': {
       get: {
         tags: ['Health'],
-        summary: 'Health check',
+        summary: 'System health check',
+        description: 'Check if the API server is running and responsive. Used for monitoring and load balancer health checks.',
         responses: {
           200: {
-            description: 'OK',
+            description: 'Server is healthy and operational',
             content: {
               'application/json': {
                 schema: {
                   type: 'object',
                   properties: {
                     status: { type: 'string', example: 'ok' },
-                    timestamp: { type: 'string' },
+                    timestamp: { type: 'string', format: 'date-time', example: '2025-11-20T08:00:00.000Z' },
                   },
                 },
+                examples: {
+                  healthyResponse: {
+                    summary: 'Healthy server response',
+                    value: {
+                      status: 'ok',
+                      timestamp: '2025-11-20T08:00:00.000Z'
+                    }
+                  }
+                }
               },
             },
+          },
+          503: {
+            description: 'Server is not healthy (database connection issues, etc.)',
           },
         },
       },
@@ -206,26 +286,36 @@ const swaggerDefinition = {
       post: {
         tags: ['Auth'],
         summary: 'Login user',
-        description: 'Authenticate user with email and password. Email verification may be required based on REQUIRE_EMAIL_VERIFICATION setting.',
+        description: 'Authenticate user with email and password. Email verification requirement can be bypassed via REQUIRE_EMAIL_VERIFICATION environment variable (currently set to false for development).',
         requestBody: {
           required: true,
           content: {
             'application/json': {
               schema: { $ref: '#/components/schemas/LoginRequest' },
+              examples: {
+                loginExample: {
+                  summary: 'Standard login',
+                  value: {
+                    email: 'user@example.com',
+                    password: 'SecurePass123!'
+                  }
+                }
+              }
             },
           },
         },
         responses: {
           200: {
-            description: 'Login successful',
+            description: 'Login successful - Returns user data and JWT tokens',
             content: {
               'application/json': {
                 schema: { $ref: '#/components/schemas/AuthResponse' },
               },
             },
           },
-          401: { description: 'Invalid credentials' },
-          403: { description: 'Email verification required (if REQUIRE_EMAIL_VERIFICATION=true)' },
+          401: { description: 'Invalid email or password' },
+          403: { description: 'Email verification required (only if REQUIRE_EMAIL_VERIFICATION=true)' },
+          429: { description: 'Too many login attempts - rate limited' },
         },
       },
     },
@@ -233,17 +323,35 @@ const swaggerDefinition = {
       post: {
         tags: ['Auth'],
         summary: 'Register a new user',
-        description: 'Create a new user account. Rate limited to 5 attempts per hour per IP. reCAPTCHA v3 optional. Requires either email or phone number, plus gender selection and country.',
+        description: 'Create a new user account with comprehensive validation. Features: Rate limiting (5/hour), Nigerian phone validation, gender/country selection, email verification with graceful fallback, age verification (18+), and secure password requirements.',
         requestBody: {
           required: true,
           content: {
             'application/json': {
               schema: { $ref: '#/components/schemas/RegisterRequest' },
               examples: {
-                emailRegistration: {
-                  summary: 'Registration with email',
+                completeExample: {
+                  summary: 'Complete Registration Fields (Choose Email OR Phone)',
+                  description: 'Shows all available fields. Use either email OR phoneNumber, not both.',
                   value: {
                     email: 'john.doe@example.com',
+                    phoneNumber: '+2348012345678',
+                    password: 'SecurePass123!',
+                    firstName: 'John',
+                    lastName: 'Doe',
+                    dateOfBirth: '1990-01-01',
+                    gender: 'male',
+                    country: 'Nigeria',
+                    role: 'user',
+                    acceptTerms: true,
+                    recaptchaToken: 'optional-recaptcha-token'
+                  }
+                },
+                emailOnly: {
+                  summary: 'Email Registration',
+                  description: 'Register with email address only',
+                  value: {
+                    email: 'user@example.com',
                     password: 'SecurePass123!',
                     firstName: 'John',
                     lastName: 'Doe',
@@ -253,8 +361,9 @@ const swaggerDefinition = {
                     acceptTerms: true
                   }
                 },
-                phoneRegistration: {
-                  summary: 'Registration with phone',
+                phoneOnly: {
+                  summary: 'Phone Registration',
+                  description: 'Register with Nigerian phone number only',
                   value: {
                     phoneNumber: '+2348012345678',
                     password: 'SecurePass123!',
@@ -262,7 +371,22 @@ const swaggerDefinition = {
                     lastName: 'Smith',
                     dateOfBirth: '1992-05-15',
                     gender: 'female',
-                    country: 'Ghana',
+                    country: 'Nigeria',
+                    acceptTerms: true
+                  }
+                },
+                therapistExample: {
+                  summary: 'Therapist Registration',
+                  description: 'Register as a mental health professional',
+                  value: {
+                    email: 'dr.sarah@clinic.com',
+                    password: 'SecurePass123!',
+                    firstName: 'Dr. Sarah',
+                    lastName: 'Johnson',
+                    dateOfBirth: '1985-03-15',
+                    gender: 'female',
+                    country: 'Nigeria',
+                    role: 'therapist',
                     acceptTerms: true
                   }
                 }
@@ -272,16 +396,39 @@ const swaggerDefinition = {
         },
         responses: {
           201: {
-            description: 'User created successfully',
+            description: 'User created successfully - Registration completes even if email verification fails',
             content: {
               'application/json': {
                 schema: { $ref: '#/components/schemas/AuthResponse' },
               },
             },
           },
-          400: { description: 'Validation error (password policy, under 18, terms not accepted, invalid gender/country)' },
+          400: { 
+            description: 'Validation errors',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean', example: false },
+                    message: { type: 'string', example: 'Validation failed' },
+                    errors: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          field: { type: 'string', example: 'phoneNumber' },
+                          message: { type: 'string', example: 'Valid Nigerian phone number is required (format: +234XXXXXXXXX, 11 digits total)' }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
           409: { description: 'Account with provided email or phone already exists' },
-          429: { description: 'Rate limit exceeded (5 attempts per hour)' },
+          429: { description: 'Rate limit exceeded - 5 registration attempts per hour per IP' },
         },
       },
     },

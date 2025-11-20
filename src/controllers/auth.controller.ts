@@ -21,6 +21,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       email,
       phoneNumber,
       password,
+      confirmPassword,
       firstName,
       lastName,
       dateOfBirth,
@@ -32,6 +33,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       email?: string;
       phoneNumber?: string;
       password: string;
+      confirmPassword: string;
       firstName: string;
       lastName: string;
       dateOfBirth: string | Date;

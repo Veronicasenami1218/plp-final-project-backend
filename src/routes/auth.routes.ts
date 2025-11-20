@@ -41,6 +41,7 @@ router.post(
           throw new Error('Passwords do not match');
         }
         return true;
+      }),
     body('firstName').notEmpty().withMessage('First name is required'),
     body('lastName').notEmpty().withMessage('Last name is required'),
     body('dateOfBirth').isISO8601().toDate().withMessage('Valid date of birth is required'),

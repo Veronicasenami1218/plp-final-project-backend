@@ -47,10 +47,17 @@ class App {
 
   public async initialize() {
     try {
+      console.log('Initializing database connection...');
       await initializeDatabase();
+      console.log('Database connected successfully');
+      
+      console.log('Initializing rate limiting...');
       await this.initializeRateLimiting();
+      console.log('Rate limiting initialized');
+      
       logger.info('Server initialization complete');
     } catch (error) {
+      console.error('Server initialization failed:', error);
       logger.error('Failed to initialize server:', error);
       process.exit(1);
     }
@@ -144,9 +151,20 @@ class App {
 }
 
 // Create and start the server
+console.log('Starting MentWel Backend...');
+console.log('Environment Variables Check:');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('PORT:', process.env.PORT);
+console.log('MONGODB_URI exists:', !!process.env.MONGODB_URI);
+console.log('JWT_SECRET exists:', !!process.env.JWT_SECRET);
+
 const app = new App();
 app.initialize().then(() => {
+  console.log('App initialization successful, starting server...');
   app.listen();
+}).catch((error) => {
+  console.error('Failed to initialize app:', error);
+  process.exit(1);
 });
 
 // Handle unhandled promise rejections

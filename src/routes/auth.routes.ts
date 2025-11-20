@@ -19,8 +19,8 @@ router.post(
     oneOf([
       body('email').isEmail().withMessage('Valid email is required'),
       body('phoneNumber')
-        .isMobilePhone('any', { strictMode: false })
-        .withMessage('Valid phone number is required (e.g., +2348012345678)'),
+        .matches(/^\+234[789][01]\d{8}$/)
+        .withMessage('Valid Nigerian phone number is required (format: +234XXXXXXXXX, 11 digits total)'),
     ], { message: 'Either a valid email or phone number is required' }),
     body('password')
       .isLength({ min: 8 })

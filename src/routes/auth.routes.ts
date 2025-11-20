@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { body, oneOf } from 'express-validator';
 import { validateRequest } from '../middleware/validate.middleware';
-import { UserRole } from '../types';
+import { UserRole, Gender, Country } from '../types';
 import * as authController from '../controllers/auth.controller';
 import rateLimit from 'express-rate-limit';
 import { verifyRecaptcha } from '../middleware/recaptcha.middleware';
@@ -36,7 +36,13 @@ router.post(
     body('firstName').notEmpty().withMessage('First name is required'),
     body('lastName').notEmpty().withMessage('Last name is required'),
     body('dateOfBirth').isISO8601().toDate().withMessage('Valid date of birth is required'),
-    body('country').optional().isString().withMessage('Country must be a string'),
+    body('gender')
+      .isIn(Object.values(Gender))
+      .withMessage('Gender must be one of: male, female, other, prefer_not_to_say'),
+    body('country')
+      .optional()
+      .isIn(Object.values(Country))
+      .withMessage('Country must be one of: Nigeria, Ghana, Kenya, South Africa, Other'),
     body('acceptTerms').equals('true').withMessage('You must accept the Terms of Service and Privacy Policy'),
     body('role')
       .optional()

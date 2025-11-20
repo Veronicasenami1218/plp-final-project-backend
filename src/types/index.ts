@@ -13,6 +13,23 @@ export enum UserStatus {
   PENDING_VERIFICATION = 'pending_verification',
 }
 
+// Gender options
+export enum Gender {
+  MALE = 'male',
+  FEMALE = 'female',
+  OTHER = 'other',
+  PREFER_NOT_TO_SAY = 'prefer_not_to_say',
+}
+
+// Supported countries
+export enum Country {
+  NIGERIA = 'Nigeria',
+  GHANA = 'Ghana',
+  KENYA = 'Kenya',
+  SOUTH_AFRICA = 'South Africa',
+  OTHER = 'Other',
+}
+
 // Session status
 export enum SessionStatus {
   PENDING = 'pending',

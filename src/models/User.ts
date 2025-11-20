@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import { UserRole, UserStatus } from '../types';
+import { UserRole, UserStatus, Gender, Country } from '../types';
 
 export interface IUser extends Document {
   email: string;
@@ -16,7 +16,8 @@ export interface IUser extends Document {
   resetPasswordExpires?: Date;
   status: UserStatus;
   dateOfBirth: Date;
-  country?: string;
+  gender: Gender;
+  country: Country;
   acceptedTermsAt?: Date;
 }
 
@@ -36,7 +37,8 @@ const UserSchema = new Schema<IUser>(
     resetPasswordExpires: { type: Date },
     status: { type: String, enum: Object.values(UserStatus), default: UserStatus.ACTIVE },
     dateOfBirth: { type: Date, required: true },
-    country: { type: String, default: 'Nigeria' },
+    gender: { type: String, enum: Object.values(Gender), required: true },
+    country: { type: String, enum: Object.values(Country), default: Country.NIGERIA },
     acceptedTermsAt: { type: Date },
   },
   { timestamps: true }

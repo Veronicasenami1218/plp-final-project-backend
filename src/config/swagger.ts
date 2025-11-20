@@ -51,7 +51,7 @@ const swaggerDefinition = {
       },
       RegisterRequest: {
         type: 'object',
-        required: ['password', 'firstName', 'lastName', 'dateOfBirth', 'acceptTerms'],
+        required: ['password', 'firstName', 'lastName', 'dateOfBirth', 'gender', 'acceptTerms'],
         properties: {
           email: { type: 'string', format: 'email', description: 'Either email or phoneNumber is required' },
           phoneNumber: { 
@@ -67,12 +67,30 @@ const swaggerDefinition = {
             pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,}$',
             description: 'Min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special character',
           },
-          firstName: { type: 'string' },
-          lastName: { type: 'string' },
-          dateOfBirth: { type: 'string', format: 'date' },
-          country: { type: 'string', default: 'Nigeria' },
-          acceptTerms: { type: 'boolean' },
-          recaptchaToken: { type: 'string', description: 'reCAPTCHA v3 token' },
+          firstName: { type: 'string', example: 'John' },
+          lastName: { type: 'string', example: 'Doe' },
+          dateOfBirth: { type: 'string', format: 'date', example: '1990-01-01' },
+          gender: {
+            type: 'string',
+            enum: ['male', 'female', 'other', 'prefer_not_to_say'],
+            description: 'User gender selection',
+            example: 'male'
+          },
+          country: {
+            type: 'string',
+            enum: ['Nigeria', 'Ghana', 'Kenya', 'South Africa', 'Other'],
+            default: 'Nigeria',
+            description: 'Country of residence',
+            example: 'Nigeria'
+          },
+          role: {
+            type: 'string',
+            enum: ['user', 'therapist'],
+            default: 'user',
+            description: 'User role - defaults to user'
+          },
+          acceptTerms: { type: 'boolean', example: true, description: 'Must be true to accept Terms of Service and Privacy Policy' },
+          recaptchaToken: { type: 'string', description: 'reCAPTCHA v3 token (optional)' },
         },
         oneOf: [
           { required: ['email'] },
@@ -107,6 +125,58 @@ const swaggerDefinition = {
         required: ['email'],
         properties: { email: { type: 'string', format: 'email' } },
       },
+      User: {
+        type: 'object',
+        properties: {
+          _id: { type: 'string', example: '507f1f77bcf86cd799439011' },
+          email: { type: 'string', format: 'email', example: 'user@example.com' },
+          firstName: { type: 'string', example: 'John' },
+          lastName: { type: 'string', example: 'Doe' },
+          role: { type: 'string', enum: ['user', 'therapist', 'admin'], example: 'user' },
+          phoneNumber: { type: 'string', example: '+2348012345678' },
+          isPhoneVerified: { type: 'boolean', example: false },
+          isEmailVerified: { type: 'boolean', example: true },
+          status: { type: 'string', enum: ['active', 'inactive', 'suspended', 'pending_verification'], example: 'active' },
+          dateOfBirth: { type: 'string', format: 'date', example: '1990-01-01' },
+          gender: { type: 'string', enum: ['male', 'female', 'other', 'prefer_not_to_say'], example: 'male' },
+          country: { type: 'string', enum: ['Nigeria', 'Ghana', 'Kenya', 'South Africa', 'Other'], example: 'Nigeria' },
+          acceptedTermsAt: { type: 'string', format: 'date-time', example: '2024-01-01T00:00:00.000Z' },
+          createdAt: { type: 'string', format: 'date-time', example: '2024-01-01T00:00:00.000Z' },
+          updatedAt: { type: 'string', format: 'date-time', example: '2024-01-01T00:00:00.000Z' },
+        },
+      },
+      AuthTokens: {
+        type: 'object',
+        properties: {
+          access: {
+            type: 'object',
+            properties: {
+              token: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' },
+              expiresIn: { type: 'string', example: '15m' },
+            },
+          },
+          refresh: {
+            type: 'object',
+            properties: {
+              token: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' },
+              expiresIn: { type: 'string', example: '7d' },
+            },
+          },
+        },
+      },
+      AuthResponse: {
+        type: 'object',
+        properties: {
+          success: { type: 'boolean', example: true },
+          data: {
+            type: 'object',
+            properties: {
+              user: { $ref: '#/components/schemas/User' },
+              tokens: { $ref: '#/components/schemas/AuthTokens' },
+            },
+          },
+        },
+      },
     },
   },
   paths: {
@@ -136,6 +206,7 @@ const swaggerDefinition = {
       post: {
         tags: ['Auth'],
         summary: 'Login user',
+        description: 'Authenticate user with email and password. Email verification may be required based on REQUIRE_EMAIL_VERIFICATION setting.',
         requestBody: {
           required: true,
           content: {
@@ -145,8 +216,16 @@ const swaggerDefinition = {
           },
         },
         responses: {
-          200: { description: 'Login successful' },
+          200: {
+            description: 'Login successful',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/AuthResponse' },
+              },
+            },
+          },
           401: { description: 'Invalid credentials' },
+          403: { description: 'Email verification required (if REQUIRE_EMAIL_VERIFICATION=true)' },
         },
       },
     },
@@ -154,19 +233,55 @@ const swaggerDefinition = {
       post: {
         tags: ['Auth'],
         summary: 'Register a new user',
-        description: 'Rate limited to 5 attempts per hour per IP. reCAPTCHA v3 required in production.',
+        description: 'Create a new user account. Rate limited to 5 attempts per hour per IP. reCAPTCHA v3 optional. Requires either email or phone number, plus gender selection and country.',
         requestBody: {
           required: true,
           content: {
             'application/json': {
               schema: { $ref: '#/components/schemas/RegisterRequest' },
+              examples: {
+                emailRegistration: {
+                  summary: 'Registration with email',
+                  value: {
+                    email: 'john.doe@example.com',
+                    password: 'SecurePass123!',
+                    firstName: 'John',
+                    lastName: 'Doe',
+                    dateOfBirth: '1990-01-01',
+                    gender: 'male',
+                    country: 'Nigeria',
+                    acceptTerms: true
+                  }
+                },
+                phoneRegistration: {
+                  summary: 'Registration with phone',
+                  value: {
+                    phoneNumber: '+2348012345678',
+                    password: 'SecurePass123!',
+                    firstName: 'Jane',
+                    lastName: 'Smith',
+                    dateOfBirth: '1992-05-15',
+                    gender: 'female',
+                    country: 'Ghana',
+                    acceptTerms: true
+                  }
+                }
+              }
             },
           },
         },
         responses: {
-          201: { description: 'User created' },
-          400: { description: 'Validation error (password policy, under 18, terms not accepted)' },
+          201: {
+            description: 'User created successfully',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/AuthResponse' },
+              },
+            },
+          },
+          400: { description: 'Validation error (password policy, under 18, terms not accepted, invalid gender/country)' },
           409: { description: 'Account with provided email or phone already exists' },
+          429: { description: 'Rate limit exceeded (5 attempts per hour)' },
         },
       },
     },

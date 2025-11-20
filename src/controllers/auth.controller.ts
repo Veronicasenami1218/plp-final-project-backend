@@ -8,8 +8,9 @@ import { ApiError } from '../utils/ApiError';
 import { User } from '../models/User';
 import { Token } from '../models/Token';
 import { sendEmail } from '../services/email.service';
+import { emailTemplates } from '../utils/emailTemplates';
 import { JWT_SECRET, JWT_ACCESS_EXPIRATION, JWT_REFRESH_EXPIRATION } from '../config';
-import { UserRole } from '../types';
+import { UserRole, Gender, Country } from '../types';
 
 /**
  * Register a new user
@@ -23,7 +24,8 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       firstName,
       lastName,
       dateOfBirth,
-      country = 'Nigeria',
+      gender,
+      country = Country.NIGERIA,
       acceptTerms,
       role = UserRole.USER,
     } = req.body as {
@@ -33,7 +35,8 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       firstName: string;
       lastName: string;
       dateOfBirth: string | Date;
-      country?: string;
+      gender: Gender;
+      country?: Country;
       acceptTerms?: string | boolean;
       role?: UserRole;
     };
@@ -89,6 +92,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       verificationToken: email ? uuidv4() : undefined,
       phoneVerificationCode: phoneCode,
       dateOfBirth: dob,
+      gender,
       country,
       acceptedTermsAt: new Date(),
     });
@@ -106,10 +110,12 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     // Send verification message (email or SMS stub)
     if (email && user.verificationToken) {
       const verificationUrl = `${process.env.CLIENT_URL}/verify-email/${user.verificationToken}`;
+      const emailContent = emailTemplates.verifyEmail(verificationUrl, firstName);
       await sendEmail({
         to: email,
-        subject: 'Verify your email',
-        html: `Please click <a href="${verificationUrl}">here</a> to verify your email.`,
+        subject: emailContent.subject,
+        html: emailContent.html,
+        text: emailContent.text,
       });
     } else if (phoneNumber && phoneCode) {
       // SMS provider integration would go here; for now, log masked
@@ -162,8 +168,9 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       throw new ApiError(StatusCodes.UNAUTHORIZED, 'Invalid credentials');
     }
 
-    // Check if email is verified
-    if (!user.isEmailVerified) {
+    // Check if email is verified (allow fallback if email verification is disabled)
+    const requireEmailVerification = process.env.REQUIRE_EMAIL_VERIFICATION !== 'false';
+    if (requireEmailVerification && !user.isEmailVerified) {
       throw new ApiError(StatusCodes.FORBIDDEN, 'Please verify your email first');
     }
 
@@ -289,10 +296,12 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
 
     // Send reset password email
     const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
+    const emailContent = emailTemplates.resetPassword(resetUrl, user.firstName);
     await sendEmail({
       to: user.email,
-      subject: 'Reset your password',
-      html: `Please click <a href="${resetUrl}">here</a> to reset your password.`,
+      subject: emailContent.subject,
+      html: emailContent.html,
+      text: emailContent.text,
     });
 
     res.status(StatusCodes.OK).json({
@@ -361,6 +370,18 @@ export const verifyEmail = async (req: Request, res: Response): Promise<void> =>
     user.verificationToken = undefined;
     await user.save();
 
+    // Send welcome email
+    const welcomeEmail = emailTemplates.welcome(user.firstName);
+    await sendEmail({
+      to: user.email,
+      subject: welcomeEmail.subject,
+      html: welcomeEmail.html,
+      text: welcomeEmail.text,
+    }).catch((error) => {
+      // Don't fail verification if welcome email fails
+      logger.error('Failed to send welcome email:', error);
+    });
+
     // Redirect to success page
     res.redirect(`${process.env.CLIENT_URL}/email-verified`);
   } catch (error) {
@@ -398,10 +419,12 @@ export const resendVerificationEmail = async (req: Request, res: Response): Prom
 
     // Send verification email
     const verificationUrl = `${process.env.CLIENT_URL}/verify-email/${user.verificationToken}`;
+    const emailContent = emailTemplates.verifyEmail(verificationUrl, user.firstName);
     await sendEmail({
       to: user.email,
-      subject: 'Verify your email',
-      html: `Please click <a href="${verificationUrl}">here</a> to verify your email.`,
+      subject: emailContent.subject,
+      html: emailContent.html,
+      text: emailContent.text,
     });
 
     res.status(StatusCodes.OK).json({

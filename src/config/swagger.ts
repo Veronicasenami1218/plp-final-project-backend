@@ -94,7 +94,7 @@ A secure, production-ready REST API for mental health services with comprehensiv
       },
       RegisterRequest: {
         type: 'object',
-        required: ['password', 'firstName', 'lastName', 'dateOfBirth', 'gender', 'acceptTerms'],
+        required: ['password', 'confirmPassword', 'firstName', 'lastName', 'dateOfBirth', 'gender', 'acceptTerms'],
         properties: {
           email: { 
             type: 'string', 
@@ -115,6 +115,12 @@ A secure, production-ready REST API for mental health services with comprehensiv
             pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,}$',
             example: 'SecurePass123!',
             description: 'Password must be at least 8 characters with: 1 uppercase, 1 lowercase, 1 number, 1 special character',
+          },
+          confirmPassword: {
+            type: 'string',
+            minLength: 8,
+            example: 'SecurePass123!',
+            description: 'Must match the password field exactly. Used to prevent password entry errors.',
           },
           firstName: { 
             type: 'string', 
@@ -337,6 +343,7 @@ A secure, production-ready REST API for mental health services with comprehensiv
                     email: 'john.doe@example.com',
                     phoneNumber: '+2348012345678',
                     password: 'SecurePass123!',
+                    confirmPassword: 'SecurePass123!',
                     firstName: 'John',
                     lastName: 'Doe',
                     dateOfBirth: '1990-01-01',
@@ -353,6 +360,7 @@ A secure, production-ready REST API for mental health services with comprehensiv
                   value: {
                     email: 'user@example.com',
                     password: 'SecurePass123!',
+                    confirmPassword: 'SecurePass123!',
                     firstName: 'John',
                     lastName: 'Doe',
                     dateOfBirth: '1990-01-01',
@@ -367,6 +375,7 @@ A secure, production-ready REST API for mental health services with comprehensiv
                   value: {
                     phoneNumber: '+2348012345678',
                     password: 'SecurePass123!',
+                    confirmPassword: 'SecurePass123!',
                     firstName: 'Jane',
                     lastName: 'Smith',
                     dateOfBirth: '1992-05-15',
@@ -381,6 +390,7 @@ A secure, production-ready REST API for mental health services with comprehensiv
                   value: {
                     email: 'dr.sarah@clinic.com',
                     password: 'SecurePass123!',
+                    confirmPassword: 'SecurePass123!',
                     firstName: 'Dr. Sarah',
                     lastName: 'Johnson',
                     dateOfBirth: '1985-03-15',

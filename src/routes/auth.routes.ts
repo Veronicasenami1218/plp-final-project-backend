@@ -33,6 +33,14 @@ router.post(
       .withMessage('Password must contain at least one number')
       .matches(/[^A-Za-z0-9]/)
       .withMessage('Password must contain at least one special character'),
+    body('confirmPassword')
+      .notEmpty()
+      .withMessage('Confirm password is required')
+      .custom((value, { req }) => {
+        if (value !== req.body.password) {
+          throw new Error('Passwords do not match');
+        }
+        return true;
     body('firstName').notEmpty().withMessage('First name is required'),
     body('lastName').notEmpty().withMessage('Last name is required'),
     body('dateOfBirth').isISO8601().toDate().withMessage('Valid date of birth is required'),

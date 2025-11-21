@@ -2,10 +2,13 @@ import mongoose from 'mongoose';
 import { logger } from '../utils/logger';
 import { MONGODB_URI, NODE_ENV } from './';
 
-// Exit application on error
+// Log MongoDB connection errors but don't exit immediately
 mongoose.connection.on('error', (err) => {
   logger.error(`MongoDB connection error: ${err}`);
-  process.exit(1);
+  // Don't exit immediately in production to allow for debugging
+  if (process.env.NODE_ENV !== 'production') {
+    process.exit(1);
+  }
 });
 
 // Log MongoDB queries in development

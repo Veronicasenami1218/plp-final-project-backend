@@ -59,7 +59,14 @@ class App {
     } catch (error) {
       console.error('Server initialization failed:', error);
       logger.error('Failed to initialize server:', error);
-      process.exit(1);
+      
+      // In production, log error but try to continue without crashing
+      if (process.env.NODE_ENV === 'production') {
+        console.error('Production mode: Server will attempt to continue despite initialization errors');
+        logger.error('Production mode: Server continuing with limited functionality');
+      } else {
+        process.exit(1);
+      }
     }
   }
 

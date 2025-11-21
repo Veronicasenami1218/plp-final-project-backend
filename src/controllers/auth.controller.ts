@@ -17,6 +17,12 @@ import { UserRole, Gender, Country } from '../types';
  */
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
+    // Add extra logging for debugging
+    logger.info('Registration attempt started', { 
+      hasEmail: !!req.body.email, 
+      hasPhone: !!req.body.phoneNumber,
+      userAgent: req.get('User-Agent')
+    });
     const {
       email,
       phoneNumber,
@@ -155,7 +161,23 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     });
   } catch (error) {
     logger.error('Registration error:', error);
-    throw error;
+    
+    // Don't crash the server - send proper error response
+    if (res.headersSent) {
+      return;
+    }
+    
+    if (error instanceof ApiError) {
+      res.status(error.statusCode).json({
+        success: false,
+        message: error.message
+      });
+    } else {
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: 'Registration failed. Please try again.'
+      });
+    }
   }
 };
 

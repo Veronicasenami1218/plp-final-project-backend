@@ -81,6 +81,20 @@ class App {
     // Request logging
     this.app.use(morgan(LOG_FORMAT, { stream }));
 
+    // Root endpoint
+    this.app.get('/', (_req, res) => {
+      res.status(StatusCodes.OK).json({ 
+        message: 'MentWel API Server', 
+        version: '1.0.0',
+        status: 'running',
+        endpoints: {
+          health: '/health',
+          api: '/api/v1',
+          docs: NODE_ENV !== 'production' ? '/api-docs' : 'disabled in production'
+        }
+      });
+    });
+
     // Health check endpoint (must be before other routes)
     this.app.get('/health', (_req, res) => {
       res.status(StatusCodes.OK).json({ status: 'ok', timestamp: new Date().toISOString() });

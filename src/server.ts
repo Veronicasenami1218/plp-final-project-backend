@@ -71,6 +71,9 @@ class App {
   }
 
   private initializeMiddlewares() {
+    // Trust proxy for accurate IP detection (required for Render/Heroku/etc)
+    this.app.set('trust proxy', 1);
+    
     // Security middleware
     this.app.use(helmet());
     

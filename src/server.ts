@@ -73,7 +73,21 @@ class App {
   private initializeMiddlewares() {
     // Security middleware
     this.app.use(helmet());
-    this.app.use(cors({ origin: ORIGIN, credentials: CREDENTIALS }));
+    
+    // CORS configuration with explicit origins
+    const corsOptions = {
+      origin: [
+        'https://plp-ment-wel.netlify.app',
+        'http://localhost:3000',
+        'http://localhost:8000',
+        'http://localhost:5000'
+      ],
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    };
+    
+    this.app.use(cors(corsOptions));
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));
     this.app.use(compression());
@@ -180,8 +194,10 @@ console.log('Starting MentWel Backend...');
 console.log('Environment Variables Check:');
 console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('PORT:', process.env.PORT);
+console.log('CLIENT_URL:', process.env.CLIENT_URL);
 console.log('MONGODB_URI exists:', !!process.env.MONGODB_URI);
 console.log('JWT_SECRET exists:', !!process.env.JWT_SECRET);
+console.log('CORS Origins configured for:', ['https://plp-ment-wel.netlify.app', 'http://localhost:3000', 'http://localhost:8000', 'http://localhost:5000']);
 
 const app = new App();
 app.initialize().then(() => {

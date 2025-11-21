@@ -4,7 +4,7 @@ import { validateRequest } from '../middleware/validate.middleware';
 import { UserRole, Gender, Country } from '../types';
 import * as authController from '../controllers/auth.controller';
 import rateLimit from 'express-rate-limit';
-import { verifyRecaptcha } from '../middleware/recaptcha.middleware';
+// import { verifyRecaptcha } from '../middleware/recaptcha.middleware'; // Temporarily disabled
 
 const router = Router();
 
@@ -59,7 +59,7 @@ router.post(
       .withMessage('Invalid user role'),
     body('recaptchaToken').optional().isString(),
   ],
-  verifyRecaptcha,
+  // verifyRecaptcha, // Temporarily disabled - causing 502 errors
   validateRequest,
   authController.register
 );

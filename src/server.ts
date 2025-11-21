@@ -81,7 +81,7 @@ class App {
     // Request logging
     this.app.use(morgan(LOG_FORMAT, { stream }));
 
-    // Health check endpoint
+    // Health check endpoint (must be before other routes)
     this.app.get('/health', (_req, res) => {
       res.status(StatusCodes.OK).json({ status: 'ok', timestamp: new Date().toISOString() });
     });

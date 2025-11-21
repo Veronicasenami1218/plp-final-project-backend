@@ -4,7 +4,10 @@ import { UserRole } from '../types';
 
 const router = Router();
 
-// Health check route (removed - handled in server.ts middleware)
+// Health check route
+router.get('/health', (_req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
 
 // Auth routes
 import authRoutes from './auth.routes';

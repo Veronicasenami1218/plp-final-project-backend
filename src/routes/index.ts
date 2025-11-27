@@ -9,23 +9,7 @@ router.get('/health', (_req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Test route to debug registration issues
-router.post('/test-register', (req, res) => {
-  try {
-    res.status(200).json({ 
-      success: true, 
-      message: 'Test endpoint working',
-      body: req.body,
-      env: {
-        hasJwtSecret: !!process.env.JWT_SECRET,
-        hasClientUrl: !!process.env.CLIENT_URL,
-        hasMongoUri: !!process.env.MONGODB_URI
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+// Debug endpoint removed - registration is working!
 
 // Auth routes
 import authRoutes from './auth.routes';

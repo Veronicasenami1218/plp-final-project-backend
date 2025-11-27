@@ -16,12 +16,25 @@ router.post(
   '/register',
   registerLimiter,
   [
-    oneOf([
-      body('email').isEmail().withMessage('Valid email is required'),
-      body('phoneNumber')
-        .matches(/^\+234[789][01]\d{8}$/)
-        .withMessage('Valid Nigerian phone number is required (format: +234XXXXXXXXX, 11 digits total)'),
-    ], { message: 'Either a valid email or phone number is required' }),
+    // Email validation (optional but must be valid if provided)
+    body('email')
+      .optional()
+      .isEmail()
+      .withMessage('Valid email is required'),
+    
+    // Phone number validation (optional but must be valid Nigerian format if provided)
+    body('phoneNumber')
+      .optional()
+      .matches(/^\+234[789][01]\d{8}$/)
+      .withMessage('Valid Nigerian phone number is required (format: +234XXXXXXXXX, 11 digits total)'),
+    
+    // Custom validation to ensure at least one contact method is provided
+    body().custom((value, { req }) => {
+      if (!req.body.email && !req.body.phoneNumber) {
+        throw new Error('Either email or phone number is required');
+      }
+      return true;
+    }),
     body('password')
       .isLength({ min: 8 })
       .withMessage('Password must be at least 8 characters long')
